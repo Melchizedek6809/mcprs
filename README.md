@@ -17,9 +17,9 @@ Rust seems like a good language for these low-level plumbing applications, Go wo
 ## ToDo
 
 ### Core Functionality
-- [x] Implement basic CLI (just printing version/help to the CLI, maybe with some colors)
-- [ ] Implement basic MCP Server functionality (using mcp-core)
-- [ ] Expose a single hardcoded MCP Server via CLI/MCP (simple proof of concept)
+- [X] Implement basic CLI (just printing version/help to the CLI, maybe with some colors)
+- [X] Implement basic MCP Server functionality (using mcp-core)
+- [X] Expose a single hardcoded MCP Server via CLI/MCP (simple proof of concept)
 - [ ] Expose installed MCP Servers via CLI/MCP (hardcoded list for now)
 - [ ] Track how much certain MCP Servers are used / by which client
 
