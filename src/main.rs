@@ -8,6 +8,7 @@ use mcp_core::{
 };
 
 mod tools;
+mod mcprs;
 
 use tools::*;
 
@@ -44,6 +45,7 @@ async fn start_server() -> Result<()> {
         ..Default::default()
     })
     .register_tool(EchoTool::tool(), EchoTool::call())
+    .register_tool(MCPRSTool::tool(), MCPRSTool::call())
     .build();
 
     let transport = ServerStdioTransport::new(server_protocol);
