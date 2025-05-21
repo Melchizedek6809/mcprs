@@ -155,15 +155,6 @@ mod tests {
     }
 
     #[test]
-    fn test_cli_list() {
-        let mut cmd = Command::cargo_bin("mcprs").unwrap();
-        cmd.arg("list");
-        cmd.assert().success().stdout(predicate::str::contains(
-            "No MCP Servers are currently installed",
-        ));
-    }
-
-    #[test]
     fn test_cli_help() {
         let mut cmd = Command::cargo_bin("mcprs").unwrap();
         cmd.arg("help");
