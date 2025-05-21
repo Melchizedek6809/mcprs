@@ -2,13 +2,13 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use colored::*;
 use mcp_core::{
-    server::Server,
+    server::{self, Server, ServerProtocolBuilder},
     transport::ServerStdioTransport,
     types::{ServerCapabilities, ToolCapabilities},
 };
 
-mod tools;
 mod mcprs;
+mod tools;
 
 use tools::*;
 
@@ -32,10 +32,10 @@ enum Commands {
     Start,
 }
 
-async fn start_server() -> Result<()> {
+async fn start_server(mcprs: mcprs::mcprs::MCPRS) -> Result<()> {
     eprintln!("Starting MCPRS...");
 
-    let server_protocol = Server::builder(
+    let mut server_protocol = Server::builder(
         env!("CARGO_PKG_NAME").to_string(),
         env!("CARGO_PKG_VERSION").to_string(),
         mcp_core::types::ProtocolVersion::V2025_03_26,
@@ -44,27 +44,31 @@ async fn start_server() -> Result<()> {
         tools: Some(ToolCapabilities::default()),
         ..Default::default()
     })
-    .register_tool(EchoTool::tool(), EchoTool::call())
-    .register_tool(MCPRSTool::tool(), MCPRSTool::call())
-    .build();
+    .register_tool(EchoTool::tool(), EchoTool::call());
 
-    let transport = ServerStdioTransport::new(server_protocol);
+    for server in mcprs.get_servers().iter() {
+        server_protocol = server_protocol.register_tool(server.tool(), server.call());
+    }
+
+    let transport = ServerStdioTransport::new(server_protocol.build());
     Server::start(transport).await
 }
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
+    let mut mcprs = mcprs::mcprs::MCPRS::new();
+    mcprs.load_config();
 
     match &cli.command {
         Some(Commands::Version) => {
             println!("{}", print_version());
         }
         Some(Commands::List) => {
-            println!("{}", list_servers());
+            println!("{}", list_servers(mcprs));
         }
         Some(Commands::Start) => {
-            return start_server().await;
+            return start_server(mcprs).await;
         }
         None => {
             println!("{}", print_welcome());
@@ -78,11 +82,15 @@ fn print_version() -> String {
     format!("{} {}", "MCPRS Version:".green().bold(), version)
 }
 
-fn list_servers() -> String {
+fn list_servers(mcprs: mcprs::mcprs::MCPRS) -> String {
     format!(
-        "{}\n{}",
-        "No MCP Servers are currently installed.".yellow(),
-        "This functionality will be implemented in a future version."
+        "{}",
+        mcprs
+            .get_servers()
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>()
+            .join("\n")
     )
 }
 
@@ -124,12 +132,6 @@ mod tests {
         // We can't easily test the colored output, but we can check that the version is included
         let output = print_version();
         assert!(output.contains(version));
-    }
-
-    #[test]
-    fn test_list_servers_string() {
-        let output = list_servers();
-        assert!(output.contains("No MCP Servers are currently installed"));
     }
 
     #[test]
